@@ -12,15 +12,24 @@ blocks:
           value: postgresql://postgres:@0.0.0.0:5432/myapp_test
         - name: RAILS_ENV
           value: test
+        - name: NODE_ENV
+          value: test
       jobs:
         - name: Test
           commands:
             - checkout
-            - sem-service start postgres 11
-            - sem-version ruby 2.6.5
+            - sem-service start postgres 12
+            - sem-version ruby 2.6.6
+            - sem-version node 12
             - cache restore
             - bundle install --deployment --path vendor/bundle
-            - bundle exec rails assets:precompile
+            - yarn install --frozen-lockfile
             - cache store
+            - bundle exec rubocop --parallel
             - bundle exec rake db:setup
             - bundle exec rake test test:system
+      epilogue:
+        on_fail:
+          commands:
+            - artifact push job log/test.log
+            - artifact push job tmp/screenshots
